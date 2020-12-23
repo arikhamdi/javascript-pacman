@@ -21,6 +21,13 @@ const tempBoard = [
     1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
     1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
 ];
+
+const keyz = {
+    ArrowRight: false,
+    ArrowLeft: false,
+    ArrowUp: false,
+    ArrowDown: false
+};
 const ghosts = [];
 
 const g = {
@@ -57,7 +64,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // console.log(g);
 })
 document.addEventListener('keydown', (e) => {
-    player.play = requestAnimationFrame(move);
+    // console.log(e.code);
+    if (e.code in keyz) {
+        keyz[e.code] = true;
+    }
+    if (!g.inplay && !player.pause) {
+        g.pacman.style.display = 'block';
+        player.play = requestAnimationFrame(move);
+        g.inplay = true;
+    }
+
+})
+
+document.addEventListener('keyup', (e) => {
+    if (e.code in keyz) {
+        keyz[e.code] = false;
+    }
 })
 
 function createGhost() {
@@ -67,16 +89,50 @@ function createGhost() {
     newGhost.style.background = board[ghosts.length];
     newGhost.name = board[ghosts.length] = 'y';
     ghosts.push(newGhost);
-    console.log(newGhost);
+    // console.log(newGhost);
 }
 
 function move() {
-    console.log(ghosts);
-    ghosts.forEach((ghost) => {
-        myBoard[ghost.pos].append(ghost);
-    })
-    g.pacman.style.display = 'block';
-    myBoard[player.pos].append(g.pacman);
+    if (g.inplay) {
+        // console.log(player.cool);
+        player.cool--; //player cooldown slowdown
+        if (player.cool < 0) {
+            //console.log(ghosts);
+            // Placing movement of ghosts
+            ghosts.forEach((ghost) => {
+                myBoard[ghost.pos].append(ghost);
+            })
+            // Keyboar events movements of player
+            let tempPos = player.pos; // current position
+            if (keyz.ArrowRight) {
+                player.pos += 1;
+            } else if (keyz.ArrowLeft) {
+                player.pos -= 1;
+            } else if (keyz.ArrowUp) {
+                player.pos -= g.size;
+            } else if (keyz.ArrowDown) {
+                player.pos += g.size;
+            }
+
+            let newPlace = myBoard[player.pos]; // futur postiion
+            if (newPlace.t == 1) {
+                // console.log('wall');
+                player.pos = tempPos;
+            }
+            if (newPlace.t == 2) {
+                console.log('dot');
+                myBoard[player.pos].innerHTML = '';
+                newPlace.t = 0;
+            }
+
+            player.cool = player.speed; // set cooloff
+            // console.log(newPlace.t);
+        }
+
+        console.log(player.pos);
+        myBoard[player.pos].append(g.pacman);
+        player.play = requestAnimationFrame(move);
+    }
 }
 
 function createGame() {
@@ -112,7 +168,7 @@ function createSquare(val) {
     }
     g.grid.append(div);
     myBoard.push(div);
-    div.t = val;
+    div.t = val; // element type of content
     div.idVal = myBoard.length;
     div.addEventListener('click', (e) => {
         console.log(div)
