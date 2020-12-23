@@ -41,7 +41,7 @@ const g = {
 
 const player = {
     pos: 60,
-    speed: 4,
+    speed: 10,
     cool: 0,
     pause: false
 }
@@ -106,8 +106,14 @@ function move() {
             let tempPos = player.pos; // current position
             if (keyz.ArrowRight) {
                 player.pos += 1;
+                // move pacman eye and mouth
+                g.eye.style.left = '20%';
+                g.mouth.style.left = '60%';
             } else if (keyz.ArrowLeft) {
                 player.pos -= 1;
+                // move pacman eye and mouth
+                g.eye.style.left = '60%';
+                g.mouth.style.left = '0';
             } else if (keyz.ArrowUp) {
                 player.pos -= g.size;
             } else if (keyz.ArrowDown) {
@@ -124,7 +130,16 @@ function move() {
                 myBoard[player.pos].innerHTML = '';
                 newPlace.t = 0;
             }
-
+            if (player.pos != tempPos) {  //check if pacman moved
+                // Open and Close mouth 
+                if (player.tog) {
+                    g.mouth.style.height = '30%';
+                    player.tog = false;
+                } else {
+                    g.mouth.style.height = '10%';
+                    player.tog = true;
+                }
+            }
             player.cool = player.speed; // set cooloff
             // console.log(newPlace.t);
         }
