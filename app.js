@@ -35,7 +35,7 @@ const g = {
     y: '',
     h: 50,
     size: 11,
-    ghosts: 6,
+    ghosts: 0,
     inplay: false
 }
 
@@ -50,6 +50,7 @@ const player = {
 }
 
 const startButton = document.querySelector('.btn');
+let demo = true;
 
 /// Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
@@ -67,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startButton.style.height = window.innerHeight + 'px';
     startButton.style.width = window.innerWidth + 'px';
-    startButton.started = false;
+    // startButton.started = false;
 
     createGame();  //create game board
 
@@ -115,7 +116,7 @@ function move() {
                         ghost.pos -= 1;
                     }
                     if (player.pos == ghost.pos) {
-                        console.log(`${ghost.name} ghost got you`);
+                        // console.log(`${ghost.name} ghost got you`);
                         player.lives--;
                         updateScore();
                         gameReset();
@@ -153,6 +154,11 @@ function move() {
             }
             if (newPlace.t == 2) {
                 myBoard[player.pos].innerHTML = '';
+                // dots left
+                let tempDots = document.querySelectorAll('.dot');
+                if (tempDots.length <= 0) {
+                    playerWins();
+                }
                 player.score++;
                 updateScore();
                 newPlace.t = 0;
@@ -201,7 +207,8 @@ function changeDirection(enemy) {
 
 // Starting and Restarting de game
 function startGame() {
-    startButton.started = true;
+    stopDemo();
+
     myBoard.length = 0;
     ghosts.length = 0;
     g.grid.innerHTML = '';
@@ -229,15 +236,9 @@ function startPosition() {
         myBoard[ghost.pos].append(ghost);
     })
 
-    if (startButton.started == false) {
-        setTimeout(() => {
-            player.play = requestAnimationFrame(move);
-            g.inplay = true;
-            if (player.lives < 6) {
-                player.lives = 5;
-                console.log(player.lives);
-            }
-        }, 2000);
+    // demo Before starting the game
+    if (demo == true) {
+        startDemo();
     }
 }
 
@@ -247,6 +248,13 @@ function startPositionCheckWall(val) {
         return val;
     }
     return startPositionCheckWall(val + 1);
+}
+
+function playerWins() {
+    g.inplay = false;
+    player.pause = true;
+    startButton.innerHTML = "You Won<br><small style='font-size:0.5em;'>play again ?</small>";
+    startButton.style.display = "block";
 }
 
 function endGame() {
@@ -261,6 +269,7 @@ function gameReset() {
         player.gameOver = true;
         endGame();
     }
+
     if (!player.gameOver) {
         setTimeout(startPosition, 3000);
     }
@@ -335,3 +344,25 @@ function createGhost() {
     ghosts.push(newGhost);
 }
 
+/// Game demo
+function startDemo() {
+    g.score.style.color = 'black';
+    g.lives.style.color = 'black';
+    g.inplay = true;
+    setTimeout(() => {
+        player.play = requestAnimationFrame(move);
+
+        if (player.lives < 6) {
+            player.lives = 5;
+        }
+    }, 1000);
+}
+
+function stopDemo() {
+    g.score.style.color = 'white';
+    g.lives.style.color = 'white';
+    window.cancelAnimationFrame(player.play);
+    g.inplay = false;
+    player.pause = true;
+    demo = false;
+}
