@@ -33,9 +33,9 @@ const ghosts = [];
 const g = {
     x: '',
     y: '',
-    h: 100,
+    h: 50,
     size: 11,
-    ghosts: 6,
+    ghosts: 2,
     inplay: false
 }
 
@@ -43,7 +43,9 @@ const player = {
     pos: 60,
     speed: 4,
     cool: 0,
-    pause: false
+    pause: false,
+    score: 0,
+    lives: 1
 }
 
 
@@ -53,6 +55,9 @@ document.addEventListener('DOMContentLoaded', () => {
     g.pacman = document.querySelector('.pacman'); //pacman
     g.eye = document.querySelector('.eye'); //pacman eye
     g.mouth = document.querySelector('.mouth'); //pacman mouth
+
+    g.score = document.querySelector('.score'); // player score
+    g.lives = document.querySelector('.lives'); // player lives
 
     g.ghost = document.querySelector('.ghost'); //ghost
     g.ghost.style.display = 'none';
@@ -81,6 +86,7 @@ function createGhost() {
     let newGhost = g.ghost.cloneNode(true);
     newGhost.pos = parseInt(g.size / 3 + g.size) + ghosts.length;
     newGhost.style.display = 'block';
+    newGhost.style.opacity = '0.8';
     newGhost.counter = 0;
 
     newGhost.style.background = board[ghosts.length];
@@ -131,6 +137,8 @@ function move() {
                     }
                     if (player.pos == ghost.pos) {
                         console.log(`${ghost.name} ghost got you`);
+                        player.lives--;
+                        updateScore();
                         gameReset();
                     }
                     let valGhost = myBoard[ghost.pos]; // Future of ghost position
@@ -165,6 +173,8 @@ function move() {
             }
             if (newPlace.t == 2) {
                 myBoard[player.pos].innerHTML = '';
+                player.score++;
+                updateScore();
                 newPlace.t = 0;
             }
             if (player.pos != tempPos) {  //check if pacman moved
@@ -180,8 +190,10 @@ function move() {
             player.cool = player.speed; // set cooloff
         }
 
-        myBoard[player.pos].append(g.pacman);
-        player.play = requestAnimationFrame(move);
+        if (!player.pause) {
+            myBoard[player.pos].append(g.pacman);
+            player.play = requestAnimationFrame(move);
+        }
     }
 }
 
@@ -199,6 +211,7 @@ function createGame() {
     g.grid.style.gridTemplateColumns = g.x;
     g.grid.style.gridTemplateRows = g.x;
     startPosition();
+    updateScore();
 }
 
 function gameReset() {
@@ -227,6 +240,16 @@ function startPositionCheckWall(val) {
         return val;
     }
     return startPositionCheckWall(val + 1);
+}
+
+
+function updateScore() {
+    if (player.lives <= 0) {
+        g.lives.innerHTML = "<br>GAME OVER";
+    } else {
+        g.score.innerHTML = `Score : ${player.score}`;
+        g.lives.innerHTML = `Lives : ${player.lives}`;
+    }
 }
 
 function createSquare(val) {
