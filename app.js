@@ -14,7 +14,7 @@ const tempBoard = [
     1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
     1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
     1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
+    1, 2, 2, 2, 2, 2, 2, 3, 2, 2, 1,
     1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
     1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
     1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
@@ -35,7 +35,7 @@ const g = {
     y: '',
     h: 50,
     size: 11,
-    ghosts: 0,
+    ghosts: 6,
     inplay: false
 }
 
@@ -46,7 +46,10 @@ const player = {
     pause: false,
     score: 0,
     lives: 5,
-    gameOver: false
+    gameOver: false,
+    gameWin: false,
+    powerUp: false,
+    powerCount: 0
 }
 
 const startButton = document.querySelector('.btn');
@@ -98,8 +101,31 @@ function move() {
     if (g.inplay) {
         player.cool--; //player cooldown slowdown
         if (player.cool < 0) {
+            if (player.powerUp) {
+                player.powerCount--;
+                g.pacman.style.backgroundColor = 'red';
+                if (player.powerCount <= 15 && player.powerCount%2) {
+                    g.pacman.style.backgroundColor = 'orange';
+                }
+                if (player.powerCount <= 0) {
+                    player.powerUp = false;
+                    g.pacman.style.backgroundColor = 'yellow';
+                    console.log("power down");
+                }
+            }
             // Placing movement of ghosts
             ghosts.forEach((ghost) => {
+                if (player.powerUp) {
+                    if (player.powerCount % 2) {
+                        ghost.style.backgroundColor = 'white';
+                    } else {
+                        ghost.style.backgroundColor = 'blue';
+                    }
+
+                } else {
+                    ghost.style.backgroundColor = ghost.defaultColor;
+                }
+
                 myBoard[ghost.pos].append(ghost);
                 ghost.counter--;
                 let oldPos = ghost.pos; // Original ghost position
@@ -116,11 +142,14 @@ function move() {
                         ghost.pos -= 1;
                     }
                     if (player.pos == ghost.pos) {
-                        // console.log(`${ghost.name} ghost got you`);
-                        player.lives--;
+                        if (player.powerUp) {
+                            player.score += 100;
+                            ghost.pos = startPositionAndCheckWall(10);
+                        } else {
+                            player.lives--;
+                            gameReset();
+                        }
                         updateScore();
-                        gameReset();
-
                     }
                     let valGhost = myBoard[ghost.pos]; // Future of ghost position
                     if (valGhost.t === 1) {
@@ -151,6 +180,14 @@ function move() {
             let newPlace = myBoard[player.pos]; // futur postiion
             if (newPlace.t == 1) {
                 player.pos = tempPos;
+            }
+            //PowerUp
+            if (newPlace.t == 3) {
+                player.powerCount = 100;
+                player.powerUp = true;
+                myBoard[player.pos].innerHTML = '';
+                player.score += 10;
+                newPlace.t = 0;
             }
             if (newPlace.t == 2) {
                 myBoard[player.pos].innerHTML = '';
@@ -228,11 +265,11 @@ function startGame() {
 function startPosition() {
     player.pause = false;
     let firstStartPosition = 60;
-    player.pos = startPositionCheckWall(firstStartPosition);
+    player.pos = startPositionAndCheckWall(firstStartPosition);
     myBoard[player.pos].append(g.pacman);
     ghosts.forEach((ghost, index) => {
         const tempPosition = (g.size + 2) + index;
-        ghost.pos = startPositionCheckWall(tempPosition);
+        ghost.pos = startPositionAndCheckWall(tempPosition);
         myBoard[ghost.pos].append(ghost);
     })
 
@@ -242,12 +279,12 @@ function startPosition() {
     }
 }
 
-function startPositionCheckWall(val) {
+function startPositionAndCheckWall(val) {
     // Check if player start position is in a wall value
     if (myBoard[val].t != 1) {
         return val;
     }
-    return startPositionCheckWall(val + 1);
+    return startPositionAndCheckWall(val + 1);
 }
 
 function playerWins() {
@@ -338,7 +375,7 @@ function createGhost() {
     newGhost.style.display = 'block';
     newGhost.style.opacity = '0.8';
     newGhost.counter = 0;
-
+    newGhost.defaultColor = board[ghosts.length];
     newGhost.style.background = board[ghosts.length];
     newGhost.name = board[ghosts.length] + 'y';
     ghosts.push(newGhost);
