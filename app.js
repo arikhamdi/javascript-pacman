@@ -41,7 +41,7 @@ const g = {
 
 const player = {
     pos: 60,
-    speed: 10,
+    speed: 4,
     cool: 0,
     pause: false
 }
@@ -56,20 +56,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     g.ghost = document.querySelector('.ghost'); //ghost
     g.ghost.style.display = 'none';
-    g.pacman.style.display = 'none';
-
 
     createGame();  //create game board
-
-    // console.log(g);
 })
+
 document.addEventListener('keydown', (e) => {
-    // console.log(e.code);
     if (e.code in keyz) {
         keyz[e.code] = true;
     }
     if (!g.inplay && !player.pause) {
-        g.pacman.style.display = 'block';
         player.play = requestAnimationFrame(move);
         g.inplay = true;
     }
@@ -89,22 +84,34 @@ function createGhost() {
     newGhost.counter = 0;
 
     newGhost.style.background = board[ghosts.length];
-    newGhost.name = board[ghosts.length] = 'y';
+    newGhost.name = board[ghosts.length] + 'y';
     ghosts.push(newGhost);
-    // console.log(newGhost);
+}
+
+function findDirection(a) {
+    let val = [a.pos % g.size, Math.ceil(a.pos / g.size)]; // col, row
+    return val;
 }
 
 function changeDirection(enemy) {
+    let gg = findDirection(enemy);
+    let pp = findDirection(player);
+
+    let ran = Math.floor(Math.random() * 2);
+    if (ran === 0) {
+        enemy.dx = (gg[0] < pp[0]) ? 2 : 3; //horizontal position
+    } else {
+        enemy.dx = (gg[1] < pp[1]) ? 1 : 0; //vertical position
+    }
+
     enemy.dx = Math.floor(Math.random() * 4);
     enemy.counter = (Math.random() * 10) + 2;
 }
 
 function move() {
     if (g.inplay) {
-        // console.log(player.cool);
         player.cool--; //player cooldown slowdown
         if (player.cool < 0) {
-            //console.log(ghosts);
             // Placing movement of ghosts
             ghosts.forEach((ghost) => {
                 myBoard[ghost.pos].append(ghost);
@@ -121,6 +128,10 @@ function move() {
                         ghost.pos += 1;
                     } else if (ghost.dx === 3) {
                         ghost.pos -= 1;
+                    }
+                    if (player.pos == ghost.pos) {
+                        console.log(`${ghost.name} ghost got you`);
+                        gameReset();
                     }
                     let valGhost = myBoard[ghost.pos]; // Future of ghost position
                     if (valGhost.t === 1) {
@@ -150,11 +161,9 @@ function move() {
 
             let newPlace = myBoard[player.pos]; // futur postiion
             if (newPlace.t == 1) {
-                // console.log('wall');
                 player.pos = tempPos;
             }
             if (newPlace.t == 2) {
-                console.log('dot');
                 myBoard[player.pos].innerHTML = '';
                 newPlace.t = 0;
             }
@@ -169,10 +178,8 @@ function move() {
                 }
             }
             player.cool = player.speed; // set cooloff
-            // console.log(newPlace.t);
         }
 
-        console.log(player.pos);
         myBoard[player.pos].append(g.pacman);
         player.play = requestAnimationFrame(move);
     }
@@ -187,10 +194,39 @@ function createGame() {
     })
 
     for (let i = 0; i < g.size; i++) {
-        g.x += ` ${g.h}px`;
+        g.x += ` ${g.h}px`; // Cell grid height
     }
     g.grid.style.gridTemplateColumns = g.x;
     g.grid.style.gridTemplateRows = g.x;
+    startPosition();
+}
+
+function gameReset() {
+    console.log('paused');
+    window.cancelAnimationFrame(player.play);
+    g.inplay = false;
+    player.pause = true;
+    setTimeout(startPosition, 3000);
+}
+
+function startPosition() {
+    player.pause = false;
+    let firstStartPosition = 60;
+    player.pos = startPositionCheckWall(firstStartPosition);
+    myBoard[player.pos].append(g.pacman);
+    ghosts.forEach((ghost, index) => {
+        const tempPosition = (g.size + 2) + index;
+        ghost.pos = startPositionCheckWall(tempPosition);
+        myBoard[ghost.pos].append(ghost);
+    })
+}
+
+// Check if player start position is in a wall value
+function startPositionCheckWall(val) {
+    if (myBoard[val].t != 1) {
+        return val;
+    }
+    return startPositionCheckWall(val + 1);
 }
 
 function createSquare(val) {
@@ -213,9 +249,9 @@ function createSquare(val) {
     myBoard.push(div);
     div.t = val; // element type of content
     div.idVal = myBoard.length;
+
     div.addEventListener('click', (e) => {
         console.log(div)
     })
-    // console.log(div);
 }
 
