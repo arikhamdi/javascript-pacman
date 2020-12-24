@@ -84,12 +84,19 @@ document.addEventListener('keyup', (e) => {
 
 function createGhost() {
     let newGhost = g.ghost.cloneNode(true);
-    newGhost.pos = 14 + ghosts.length;
+    newGhost.pos = parseInt(g.size / 3 + g.size) + ghosts.length;
     newGhost.style.display = 'block';
+    newGhost.counter = 0;
+
     newGhost.style.background = board[ghosts.length];
     newGhost.name = board[ghosts.length] = 'y';
     ghosts.push(newGhost);
     // console.log(newGhost);
+}
+
+function changeDirection(enemy) {
+    enemy.dx = Math.floor(Math.random() * 4);
+    enemy.counter = (Math.random() * 10) + 2;
 }
 
 function move() {
@@ -101,6 +108,27 @@ function move() {
             // Placing movement of ghosts
             ghosts.forEach((ghost) => {
                 myBoard[ghost.pos].append(ghost);
+                ghost.counter--;
+                let oldPos = ghost.pos; // Original ghost position
+                if (ghost.counter <= 0) {
+                    changeDirection(ghost);
+                } else {
+                    if (ghost.dx === 0) {
+                        ghost.pos -= g.size;
+                    } else if (ghost.dx === 1) {
+                        ghost.pos += g.size;
+                    } else if (ghost.dx === 2) {
+                        ghost.pos += 1;
+                    } else if (ghost.dx === 3) {
+                        ghost.pos -= 1;
+                    }
+                    let valGhost = myBoard[ghost.pos]; // Future of ghost position
+                    if (valGhost.t === 1) {
+                        ghost.pos = oldPos;
+                        changeDirection(ghost);
+                    }
+                    myBoard[ghost.pos].append(ghost);
+                }
             })
             // Keyboar events movements of player
             let tempPos = player.pos; // current position
