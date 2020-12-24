@@ -35,7 +35,7 @@ const g = {
     y: '',
     h: 50,
     size: 11,
-    ghosts: 2,
+    ghosts: 6,
     inplay: false
 }
 
@@ -45,10 +45,13 @@ const player = {
     cool: 0,
     pause: false,
     score: 0,
-    lives: 1
+    lives: 5,
+    gameOver: false
 }
 
+const startButton = document.querySelector('.btn');
 
+/// Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
     g.grid = document.querySelector('.grid'); //gameBoard
 
@@ -62,7 +65,12 @@ document.addEventListener('DOMContentLoaded', () => {
     g.ghost = document.querySelector('.ghost'); //ghost
     g.ghost.style.display = 'none';
 
+    startButton.style.height = window.innerHeight + 'px';
+    startButton.style.width = window.innerWidth + 'px';
+    startButton.started = false;
+
     createGame();  //create game board
+
 })
 
 document.addEventListener('keydown', (e) => {
@@ -82,38 +90,9 @@ document.addEventListener('keyup', (e) => {
     }
 })
 
-function createGhost() {
-    let newGhost = g.ghost.cloneNode(true);
-    newGhost.pos = parseInt(g.size / 3 + g.size) + ghosts.length;
-    newGhost.style.display = 'block';
-    newGhost.style.opacity = '0.8';
-    newGhost.counter = 0;
+startButton.addEventListener('click', startGame)
 
-    newGhost.style.background = board[ghosts.length];
-    newGhost.name = board[ghosts.length] + 'y';
-    ghosts.push(newGhost);
-}
-
-function findDirection(a) {
-    let val = [a.pos % g.size, Math.ceil(a.pos / g.size)]; // col, row
-    return val;
-}
-
-function changeDirection(enemy) {
-    let gg = findDirection(enemy);
-    let pp = findDirection(player);
-
-    let ran = Math.floor(Math.random() * 2);
-    if (ran === 0) {
-        enemy.dx = (gg[0] < pp[0]) ? 2 : 3; //horizontal position
-    } else {
-        enemy.dx = (gg[1] < pp[1]) ? 1 : 0; //vertical position
-    }
-
-    enemy.dx = Math.floor(Math.random() * 4);
-    enemy.counter = (Math.random() * 10) + 2;
-}
-
+/// Main GamePlay
 function move() {
     if (g.inplay) {
         player.cool--; //player cooldown slowdown
@@ -140,6 +119,7 @@ function move() {
                         player.lives--;
                         updateScore();
                         gameReset();
+
                     }
                     let valGhost = myBoard[ghost.pos]; // Future of ghost position
                     if (valGhost.t === 1) {
@@ -197,6 +177,109 @@ function move() {
     }
 }
 
+/// Ghost AI
+function findDirection(a) {
+    let val = [a.pos % g.size, Math.ceil(a.pos / g.size)]; // col, row
+    return val;
+}
+
+function changeDirection(enemy) {
+    let gg = findDirection(enemy);
+    let pp = findDirection(player);
+
+    let ran = Math.floor(Math.random() * 2);
+    if (ran === 0) {
+        enemy.dx = (gg[0] < pp[0]) ? 2 : 3; //horizontal position
+    } else {
+        enemy.dx = (gg[1] < pp[1]) ? 1 : 0; //vertical position
+    }
+
+    enemy.dx = Math.floor(Math.random() * 4);
+    enemy.counter = (Math.random() * 10) + 2;
+}
+
+
+// Starting and Restarting de game
+function startGame() {
+    startButton.started = true;
+    myBoard.length = 0;
+    ghosts.length = 0;
+    g.grid.innerHTML = '';
+    g.x = '';
+
+    player.score = 0;
+    player.lives = 5;
+    player.gameOver = false;
+
+    createGame();
+
+    g.grid.focus();
+    startButton.style.display = "none";
+
+}
+
+function startPosition() {
+    player.pause = false;
+    let firstStartPosition = 60;
+    player.pos = startPositionCheckWall(firstStartPosition);
+    myBoard[player.pos].append(g.pacman);
+    ghosts.forEach((ghost, index) => {
+        const tempPosition = (g.size + 2) + index;
+        ghost.pos = startPositionCheckWall(tempPosition);
+        myBoard[ghost.pos].append(ghost);
+    })
+
+    if (startButton.started == false) {
+        setTimeout(() => {
+            player.play = requestAnimationFrame(move);
+            g.inplay = true;
+            if (player.lives < 6) {
+                player.lives = 5;
+                console.log(player.lives);
+            }
+        }, 2000);
+    }
+}
+
+function startPositionCheckWall(val) {
+    // Check if player start position is in a wall value
+    if (myBoard[val].t != 1) {
+        return val;
+    }
+    return startPositionCheckWall(val + 1);
+}
+
+function endGame() {
+    startButton.style.display = "block";
+}
+
+function gameReset() {
+    window.cancelAnimationFrame(player.play);
+    g.inplay = false;
+    player.pause = true;
+    if (player.lives <= 0) {
+        player.gameOver = true;
+        endGame();
+    }
+    if (!player.gameOver) {
+        setTimeout(startPosition, 3000);
+    }
+
+}
+
+/// Game Updates
+function updateScore() {
+    if (player.lives <= 0) {
+        player.gameOver = true;
+        g.lives.innerHTML = "<br>GAME OVER";
+    } else {
+        g.score.innerHTML = `Score : ${player.score}`;
+        g.lives.innerHTML = `Lives : ${player.lives}`;
+    }
+}
+
+
+/// Game board Setup
 function createGame() {
     for (let i = 0; i < g.ghosts; i++) {
         createGhost();
@@ -212,44 +295,6 @@ function createGame() {
     g.grid.style.gridTemplateRows = g.x;
     startPosition();
     updateScore();
-}
-
-function gameReset() {
-    console.log('paused');
-    window.cancelAnimationFrame(player.play);
-    g.inplay = false;
-    player.pause = true;
-    setTimeout(startPosition, 3000);
-}
-
-function startPosition() {
-    player.pause = false;
-    let firstStartPosition = 60;
-    player.pos = startPositionCheckWall(firstStartPosition);
-    myBoard[player.pos].append(g.pacman);
-    ghosts.forEach((ghost, index) => {
-        const tempPosition = (g.size + 2) + index;
-        ghost.pos = startPositionCheckWall(tempPosition);
-        myBoard[ghost.pos].append(ghost);
-    })
-}
-
-// Check if player start position is in a wall value
-function startPositionCheckWall(val) {
-    if (myBoard[val].t != 1) {
-        return val;
-    }
-    return startPositionCheckWall(val + 1);
-}
-
-
-function updateScore() {
-    if (player.lives <= 0) {
-        g.lives.innerHTML = "<br>GAME OVER";
-    } else {
-        g.score.innerHTML = `Score : ${player.score}`;
-        g.lives.innerHTML = `Lives : ${player.lives}`;
-    }
 }
 
 function createSquare(val) {
@@ -276,5 +321,17 @@ function createSquare(val) {
     div.addEventListener('click', (e) => {
         console.log(div)
     })
+}
+
+function createGhost() {
+    let newGhost = g.ghost.cloneNode(true);
+    newGhost.pos = parseInt(g.size / 3 + g.size) + ghosts.length;
+    newGhost.style.display = 'block';
+    newGhost.style.opacity = '0.8';
+    newGhost.counter = 0;
+
+    newGhost.style.background = board[ghosts.length];
+    newGhost.name = board[ghosts.length] + 'y';
+    ghosts.push(newGhost);
 }
 

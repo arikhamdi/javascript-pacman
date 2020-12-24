@@ -1,9 +1,9 @@
 * {
     box-sizing: border-box;
 }
-body {
-    
-}
+html, body {
+   background-color:black;
+  }
 
 
 .boxStart {
@@ -24,6 +24,16 @@ body {
     border: 1px solid black;
     z-index: 3;
     background-color: green;
+}
+.btn {
+    position: fixed;
+    top:0;
+    display:block;
+    color: red;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: none;
+    font-size:10em;
+    z-index : 5;
 }
 
 .eyes {
