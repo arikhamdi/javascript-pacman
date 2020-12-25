@@ -148,7 +148,7 @@ function move() {
                 }
             }
             // Placing movement of ghosts
-            ghosts.forEach((ghost) => {
+            ghosts.forEach((ghost, index) => {
                 if (player.powerUp) {
                     if (player.powerCount % 2) {
                         ghost.style.backgroundColor = 'white';
@@ -174,12 +174,17 @@ function move() {
                     } else if (ghost.dx === 3) {
                         ghost.pos -= 1;
                     }
+                    if (ghost.spawn > 0) {
+                        ghost.spawn--;
+                        ghost.pos = oldPos;
+                    }
                     let valGhost = myBoard[ghost.pos]; // Future of ghost position
 
-                    if (player.pos == ghost.pos) {
-                        if (player.powerUp) {
+                    if (player.pos == ghost.pos || player.pos == oldPos) {
+                        if (player.powerUp) { // player eat ghosts
                             player.score += 100;
-                            ghost.pos = g.startGhost;
+                            ghost.spawn = 100;
+                            ghost.pos = (g.startGhost + (g.size / 2 - g.ghosts / 2)) - 1 + index;
                         } else {
                             player.lives--;
                             gameReset();
@@ -432,7 +437,7 @@ function startDemo() {
         if (player.lives < 6) {
             player.lives = 5;
         }
-    }, 1000);
+    }, 100);
 }
 
 function stopDemo() {
