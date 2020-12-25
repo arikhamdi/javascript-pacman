@@ -8,20 +8,7 @@ const board = [
 ];
 
 const myBoard = [];
-const tempBoard = [
-    // 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 4, 4, 4, 4, 4, 4, 4, 1, 1,
-    1, 2, 3, 2, 2, 2, 2, 2, 2, 2, 1,
-    1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
-    1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 2, 2, 2, 2, 2, 2, 3, 2, 2, 1,
-    1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
-    1, 2, 1, 1, 1, 1, 1, 1, 1, 2, 1,
-    1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 1,
-    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-];
+const tempBoard = [];
 
 const keyz = {
     ArrowRight: false,
@@ -35,10 +22,10 @@ const g = {
     x: '',
     y: '',
     h: 50,
-    size: 11,
+    size: 20,
     ghosts: 6,
     inplay: false,
-    startGhost: 4
+    startGhost: 11
 }
 
 const player = {
@@ -73,9 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     startButton.style.height = window.innerHeight + 'px';
     startButton.style.width = window.innerWidth + 'px';
-    // startButton.started = false;
 
-    createGame();  //create game board
+    boardBuilder(); // build game board dynamically
+    createGame();  // create game board
+
 
 })
 
@@ -97,10 +85,49 @@ document.addEventListener('keyup', (e) => {
 })
 
 startButton.addEventListener('click', startGame)
-// startButton.addEventListener('click', boardBuilder)
 
 function boardBuilder() {
-    console.log(myBoard);
+    tempBoard.length = 0;
+    let boxSize = (document.documentElement.clientHeight < document.documentElement.clientWidth) ? document.documentElement.clientHeight : document.documentElement.clientWidth;
+    console.log(boxSize)
+    g.h = (boxSize / g.size) - (boxSize / (g.size * 5));
+    console.log(g.h);
+    for (let y = 0; y < g.size; y++) {
+        let wallz = 0;
+
+        for (let x = 0; x < g.size; x++) {
+            let val = 2; // populate all area with dots
+
+            // override the populated dots with random walls
+            wallz--;
+            if (wallz > 0 && (y - 1) % 2) {
+                val = 1;
+            } else {
+                wallz = Math.floor(Math.random() * (g.size / 2));
+            }
+
+            // override the inner border of the game board 
+            // and add a path with dots
+            if (y === 1 || y === (g.size - 3) || x === 1 || x === (g.size - 2)) {
+                val = 2;
+            }
+            // override bottom dots to add ghosts spawn
+            if (y == (g.size - 2)) {
+                val = 4;
+            }
+            // override preceing dots by 4 superdots
+            if (x === 3 || x === (g.size - 4)) {
+                if (y === 1 || y === (g.size - 3)) {
+                    val = 3;
+                }
+            }
+            // Finally override the border and delimit the game board 
+            if (y === 0 || y === (g.size - 1) || x === 0 || x === (g.size - 1)) {
+                val = 1; // border of the area
+            }
+            tempBoard.push(val);
+        }
+    }
 }
 
 /// Main GamePlay
@@ -148,19 +175,20 @@ function move() {
                         ghost.pos -= 1;
                     }
                     let valGhost = myBoard[ghost.pos]; // Future of ghost position
-                    if (valGhost == undefined || valGhost.t == 1 || valGhost.t == 4) {
-                        ghost.pos = oldPos;
-                        changeDirection(ghost);
-                    }
+
                     if (player.pos == ghost.pos) {
                         if (player.powerUp) {
                             player.score += 100;
-                            ghost.pos = startPositionAndCheckWall(3);
+                            ghost.pos = g.startGhost;
                         } else {
                             player.lives--;
                             gameReset();
                         }
                         updateScore();
+                    }
+                    if (valGhost.t == 1) {
+                        ghost.pos = oldPos;
+                        changeDirection(ghost);
                     }
                     myBoard[ghost.pos].append(ghost);
                 }
@@ -270,11 +298,11 @@ function startGame() {
 
 function startPosition() {
     player.pause = false;
-    let firstStartPosition = 60;
+    let firstStartPosition = ((g.size * 7) + g.size / 2) - 1;
     player.pos = startPositionAndCheckWall(firstStartPosition);
     myBoard[player.pos].append(g.pacman);
     ghosts.forEach((ghost, index) => {
-        const tempPosition = (g.startGhost) + index;
+        const tempPosition = (g.startGhost + (g.size / 2 - g.ghosts / 2)) - 1 + index;
         ghost.pos = startPositionAndCheckWall(tempPosition);
         myBoard[ghost.pos].append(ghost);
     })
@@ -368,7 +396,7 @@ function createSquare(val) {
     if (val === 4) {
         //hideout
         div.classList.add('hideout');
-        if (g.startGhost === 4) {
+        if (g.startGhost === 11) {
             g.startGhost = myBoard.length;
         }
     }
@@ -384,7 +412,6 @@ function createSquare(val) {
 
 function createGhost() {
     let newGhost = g.ghost.cloneNode(true);
-    // newGhost.pos = g.startGhost + ghosts.length;
     newGhost.style.display = 'block';
     newGhost.style.opacity = '0.8';
     newGhost.counter = 0;
